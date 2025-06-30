@@ -21,7 +21,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = "";
-const API_ENDPOINT = "api.dgenai.io";
+const API_ENDPOINT = "https://api.dgenai.io";
 
 const TypingDots = () => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px' }}>
@@ -58,7 +58,7 @@ export default function AgentChatbot() {
     const chatEndRef = useRef(null);
 
     useEffect(() => {
-        axios.get(`${API_ENDPOINT}/api/agents`, {
+        axios.get(`${API_ENDPOINT}/api/public/agents`, {
             headers: { 'X-Api-Key': API_KEY }
         })
             .then(response => setAgents(response.data))
@@ -85,7 +85,7 @@ export default function AgentChatbot() {
         setLoadingResponse(true);
 
         try {
-            const response = await axios.post(`${API_ENDPOINT}/api/agents/${selectedAgent}/ask`, {
+            const response = await axios.post(`${API_ENDPOINT}/api/public/agents/${selectedAgent}/ask`, {
                 input: updatedHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')
             }, {
                 headers: { 'X-Api-Key': API_KEY }
