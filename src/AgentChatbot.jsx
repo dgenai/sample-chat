@@ -1,390 +1,480 @@
-import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useRef, useState } from "react";
 import {
-    Box,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Typography,
-    Paper,
-    Avatar,
-    CircularProgress,
-    OutlinedInput,
-    InputAdornment,
-    IconButton,
-    useTheme,
-    Button
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import ReactMarkdown from 'react-markdown';
+  Box,
+  Typography,
+  Paper,
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
+  CircularProgress,
+  Button,
+  useTheme,
+  Card,
+  CardActionArea,
+  Avatar,
+} from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import ReactMarkdown from "react-markdown";
 
-const API_KEY = "";
-const API_ENDPOINT = "https://api.dgenai.io";
+const API_BASE = "http://localhost:5050/api";
 
 const TypingDots = () => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px' }}>
-        {[0, 1, 2].map((i) => (
-            <Box
-                key={i}
-                sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    backgroundColor: '#999',
-                    animation: 'typingAnimation 1.4s infinite',
-                    animationDelay: `${i * 0.2}s`,
-                }}
-            />
-        ))}
-        <style>{`
-            @keyframes typingAnimation {
-              0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-              40% { transform: scale(1.2); opacity: 1; }
-            }
-        `}</style>
-    </Box>
+  <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+    {[0, 1, 2].map((i) => (
+      <Box
+        key={i}
+        sx={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          backgroundColor: "#888",
+          animation: "typingAnimation 1.4s infinite",
+          animationDelay: `${i * 0.2}s`,
+        }}
+      />
+    ))}
+    <style>{`
+      @keyframes typingAnimation {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1.2); opacity: 1; }
+      }
+    `}</style>
+  </Box>
 );
 
-export default function AgentChatbot() {
-    const theme = useTheme();
-    const [agents, setAgents] = useState([]);
-    const [selectedAgent, setSelectedAgent] = useState('');
-    const [chatInput, setChatInput] = useState('');
-    const [chatHistory, setChatHistory] = useState([]);
-    const [loadingAgents, setLoadingAgents] = useState(true);
-    const [loadingResponse, setLoadingResponse] = useState(false);
-    const chatEndRef = useRef(null);
+const MessageBubble = React.memo(function MessageBubble({ msg, theme }) {
+  const isUser = msg.role === "user";
+  const isSystem = msg.role === "system";
 
-    useEffect(() => {
-        axios.get(`${API_ENDPOINT}/api/public/agents`, {
-            headers: { 'X-Api-Key': API_KEY }
-        })
-            .then(response => setAgents(response.data))
-            .catch(error => console.error('Failed to load agents:', error))
-            .finally(() => setLoadingAgents(false));
-    }, []);
-
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatHistory]);
-
-    const sendMessage = async () => {
-        if (!selectedAgent || !chatInput.trim()) return;
-
-        const userMessage = {
-            role: 'user',
-            content: chatInput,
-            timestamp: new Date().toISOString()
-        };
-
-        const updatedHistory = [...chatHistory, userMessage];
-        setChatHistory(updatedHistory);
-        setChatInput('');
-        setLoadingResponse(true);
-
-        try {
-            const response = await axios.post(`${API_ENDPOINT}/api/public/agents/${selectedAgent}/ask`, {
-                input: updatedHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')
-            }, {
-                headers: { 'X-Api-Key': API_KEY }
-            });
-
-            const agentMessage = {
-                role: 'agent',
-                content: response.data,
-                timestamp: new Date().toISOString()
-            };
-
-            setChatHistory([...updatedHistory, agentMessage]);
-        } catch (error) {
-            console.error('Failed to send message:', error);
-        } finally {
-            setLoadingResponse(false);
-        }
-    };
-
-    const selectedAgentObj = agents.find(a => a.id === selectedAgent);
-
-    const handleReset = () => {
-        setChatHistory([]);
-        setChatInput('');
-    };
-
-    return (
-        <Box
-            sx={{
-                height: '100vh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.palette.background.default,
-                p: { xs: 1, sm: 2 },
-            }}
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: isUser ? "flex-end" : "flex-start",
+        mb: 1.5,
+        px: 1,
+      }}
+    >
+      <Paper
+        sx={{
+          p: 1.5,
+          px: 2,
+          maxWidth: "75%",
+          bgcolor: isSystem
+            ? theme.palette.success.light + "15"
+            : isUser
+            ? theme.palette.primary.main
+            : "rgba(255,255,255,0.08)",
+          color: isUser
+            ? theme.palette.primary.contrastText
+            : theme.palette.text.primary,
+          borderRadius: isUser ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+          boxShadow: isUser
+            ? "0 2px 8px rgba(0,0,0,0.4)"
+            : "0 2px 6px rgba(0,0,0,0.25)",
+          backdropFilter: "blur(8px)",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": { transform: "translateY(-1px)" },
+        }}
+      >
+        <ReactMarkdown>{msg.content}</ReactMarkdown>
+        <Typography
+          variant="caption"
+          sx={{ opacity: 0.6, display: "block", mt: 0.5 }}
         >
-            <Paper
-                elevation={4}
+          {new Date(msg.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Typography>
+      </Paper>
+    </Box>
+  );
+});
+
+export default function AgentChatbot() {
+  const theme = useTheme();
+  const [agents, setAgents] = useState([]);
+  const [selectedAgent, setSelectedAgent] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [loadingAgents, setLoadingAgents] = useState(true);
+  const [loadingResponse, setLoadingResponse] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    async function loadAgents() {
+      try {
+        const res = await fetch(`${API_BASE}/agents`);
+        const data = await res.json();
+        setAgents(data);
+      } catch (err) {
+        console.error("Failed to fetch agents:", err);
+      } finally {
+        setLoadingAgents(false);
+      }
+    }
+    loadAgents();
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory, statusMessage]);
+
+  async function handleSseEvent(parsed) {
+    const type = parsed.type;
+    let msg = parsed.msg || parsed.data;
+
+    if (type === "payment" && typeof msg === "string") {
+      try {
+        msg = JSON.parse(msg);
+      } catch {}
+    }
+
+    switch (type) {
+      case "status":
+        setChatHistory((prev) => [
+          ...prev,
+          { role: "system", content: `🟡 ${msg}`, timestamp: new Date().toISOString() },
+        ]);
+        break;
+      case "payment":
+        if (!msg?.success) break;
+        const explorer =
+          msg.network === "solana"
+            ? `https://solscan.io/tx/${msg.transaction}`
+            : "#";
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            role: "system",
+            content: `💸 **Payment confirmed**  
+Network: **${msg.network.toUpperCase()}**  
+Payer: \`${msg.payer}\`  
+[View transaction ↗](${explorer})`,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        break;
+      case "message":
+        setChatHistory((prev) => {
+          const text = msg || "";
+          const last = prev[prev.length - 1];
+          if (last && last.role === "agent" && last.streaming) {
+            return [
+              ...prev.slice(0, -1),
+              { ...last, content: last.content + text, streaming: true },
+            ];
+          }
+          return [
+            ...prev,
+            { role: "agent", content: text, timestamp: new Date().toISOString(), streaming: true },
+          ];
+        });
+        break;
+      case "done":
+        setChatHistory((prev) =>
+          prev.map((m) => (m.streaming ? { ...m, streaming: false } : m))
+        );
+        setLoadingResponse(false);
+        break;
+      case "error":
+        setStatusMessage("Error during communication.");
+        break;
+    }
+  }
+
+  const sendMessage = async () => {
+    if (!selectedAgent || !chatInput.trim()) return;
+    const userMessage = {
+      role: "user",
+      content: chatInput,
+      timestamp: new Date().toISOString(),
+    };
+    setChatHistory((prev) => [...prev, userMessage]);
+    setChatInput("");
+    setLoadingResponse(true);
+    setStatusMessage(null);
+
+    const payload = {
+      agentId: selectedAgent.id,
+      input: userMessage.content,
+      userName: "web-client",
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        chunk
+          .split("\n\n")
+          .filter(Boolean)
+          .forEach((line) => {
+            if (!line.startsWith("data:")) return;
+            const data = line.replace(/^data:\s*/, "");
+            try {
+              const parsed = JSON.parse(data);
+              handleSseEvent(parsed);
+            } catch (_) {}
+          });
+      }
+      setLoadingResponse(false);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      setStatusMessage("Error during communication.");
+      setLoadingResponse(false);
+    }
+  };
+
+  const handleReset = () => {
+    setChatHistory([]);
+    setChatInput("");
+    setStatusMessage(null);
+    setLoadingResponse(false);
+  };
+
+  if (!selectedAgent) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: theme.palette.background.default,
+          color: theme.palette.text.primary,
+          p: 3,
+        }}
+      >
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+          Choose your AI Agent
+        </Typography>
+        {loadingAgents ? (
+          <CircularProgress />
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              justifyContent: "center",
+              maxWidth: 800,
+            }}
+          >
+            {agents.map((agent) => (
+              <Card
+                key={agent.id}
                 sx={{
-                    width: '100%',
-                    maxWidth: 800,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: { xs: 0, sm: 4 },
-                    p: 2,
+                  width: 200,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.06)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    border: `1px solid ${theme.palette.primary.main}`,
+                    boxShadow: `0 0 12px ${theme.palette.primary.main}40`,
+                  },
+                  transition: "0.25s ease",
                 }}
-            >
-                {/* Header: avatar, name, description, selector */}
-                <Box
-                    component={Paper}
-                    elevation={1}
-                    sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'flex-start', sm: 'center' },
-                        justifyContent: 'space-between',
-                        gap: 2,
-                        mb: 2,
-                        p: 2,
-                        borderRadius: 3,
-                        backgroundColor: theme.palette.background.paper,
-                    }}
+              >
+                <CardActionArea
+                  onClick={() => {
+                    setSelectedAgent(agent);
+                    handleReset();
+                  }}
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    minHeight: 160,
+                  }}
                 >
-                    {/* Agent avatar, name and description */}
-                    <Box display="flex" alignItems="center" gap={2}>
-                        {selectedAgentObj?.imageUrl && (
-                            <Avatar src={selectedAgentObj.imageUrl} sx={{ width: 56, height: 56 }} />
-                        )}
-                        <Box>
-                            <Typography variant="h6" fontWeight={700}>
-                                {selectedAgentObj?.name || 'Chit Chat'}
-                            </Typography>
-                            {selectedAgentObj?.description && (
-                                <Typography variant="body2" color="text.secondary">
-                                    {selectedAgentObj.description}
-                                </Typography>
-                            )}
-                        </Box>
-                    </Box>
-
-                    {/* Agent selector */}
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                        <InputLabel id="agent-select-label">Choose an agent</InputLabel>
-                        <Select
-                            labelId="agent-select-label"
-                            value={selectedAgent}
-                            label="Choose an agent"
-                            onChange={(e) => {
-                                setSelectedAgent(e.target.value);
-                                setChatHistory([]);
-                            }}
-                            disabled={loadingAgents}
-                        >
-                            {loadingAgents ? (
-                                <MenuItem disabled>
-                                    <Box display="flex" alignItems="center" gap={1}>
-                                        <CircularProgress size={20} />
-                                        <Typography>Loading agents...</Typography>
-                                    </Box>
-                                </MenuItem>
-                            ) : agents.map(agent => (
-                                <MenuItem key={agent.id} value={agent.id}>
-                                    <Box display="flex" alignItems="center" gap={1}>
-                                        {agent.imageUrl && (
-                                            <Avatar src={agent.imageUrl} sx={{ width: 24, height: 24 }} />
-                                        )}
-                                        {agent.name}
-                                    </Box>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    {/* Reset button */}
-                    {chatHistory.length > 0 && (
-                        <Button
-                            onClick={handleReset}
-                            size="small"
-                            startIcon={<RefreshIcon />}
-                            variant="outlined"
-                        >
-                            Reset
-                        </Button>
-                    )}
-                </Box>
-
-                {/* Chat history */}
-                <Box
+                  <Avatar
                     sx={{
-                        flexGrow: 1,
-                        overflowY: 'auto',
-                        my: 2,
-                        pr: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
+                      bgcolor: theme.palette.primary.main,
+                      width: 44,
+                      height: 44,
+                      mb: 1.2,
+                      fontWeight: 600,
                     }}
-                >
-                    {chatHistory.map((msg, idx) => (
-                        <Box
-                            key={idx}
-                            sx={{
-                                display: 'flex',
-                                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                                alignItems: 'flex-end',
-                                mb: 1,
-                                px: 1,
-                            }}
-                        >
-                            {msg.role === 'agent' && selectedAgentObj?.imageUrl && (
-                                <Avatar
-                                    src={selectedAgentObj.imageUrl}
-                                    alt="Agent"
-                                    sx={{ width: 32, height: 32, mr: 1 }}
-                                />
-                            )}
-                            <Paper
-                                elevation={1}
-                                sx={{
-                                    maxWidth: '75%',
-                                    p: 1.5,
-                                    backgroundColor:
-                                        msg.role === 'user'
-                                            ? theme.palette.primary.main
-                                            : theme.palette.mode === 'dark'
-                                                ? theme.palette.grey[800]
-                                                : theme.palette.grey[100],
-                                    color:
-                                        msg.role === 'user'
-                                            ? theme.palette.primary.contrastText
-                                            : theme.palette.text.primary,
-                                    borderRadius: msg.role === 'user'
-                                        ? '16px 16px 4px 16px'
-                                        : '16px 16px 16px 4px',
-                                    wordBreak: 'break-word',
-                                }}
-                            >
-                                {msg.role === 'agent' ? (
-                                  <ReactMarkdown
-                                  components={{
-                                      p: ({ node, ...props }) => (
-                                          <Typography component="p" {...props} sx={{ textAlign: 'left', m: 0, mb: 1 }} />
-                                      ),
-                                      li: ({ node, ...props }) => (
-                                          <li style={{ textAlign: 'left', marginBottom: '4px' }} {...props} />
-                                      ),
-                                      h1: ({ node, ...props }) => (
-                                          <Typography variant="h4" component="h1" {...props} sx={{ textAlign: 'left', mt: 2, mb: 1 }} />
-                                      ),
-                                      h2: ({ node, ...props }) => (
-                                          <Typography variant="h5" component="h2" {...props} sx={{ textAlign: 'left', mt: 2, mb: 1 }} />
-                                      ),
-                                      h3: ({ node, ...props }) => (
-                                          <Typography variant="h6" component="h3" {...props} sx={{ textAlign: 'left', mt: 2, mb: 1 }} />
-                                      ),
-                                      h4: ({ node, ...props }) => (
-                                          <Typography variant="subtitle1" component="h4" {...props} sx={{ textAlign: 'left', mt: 2, mb: 1 }} />
-                                      ),
-                                      strong: ({ node, ...props }) => (
-                                          <Typography component="span" sx={{ fontWeight: 700 }} {...props} />
-                                      )
-                                  }}
-                              >
-                                  {msg.content}
-                              </ReactMarkdown>
-                              
-                                ) : (
-                                    <Typography sx={{ textAlign: 'left', m: 0 }}>{msg.content}</Typography>
-                                )}
-                                {msg.timestamp && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            display: 'block',
-                                            textAlign: msg.role === 'user' ? 'right' : 'left',
-                                            mt: 0.5,
-                                            opacity: 0.6
-                                        }}
-                                    >
-                                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </Typography>
-                                )}
-                            </Paper>
-                        </Box>
-                    ))}
-
-                    {/* Typing animation */}
-                    {loadingResponse && (
-                        <Box display="flex" flexDirection="row" alignItems="center" mb={1} px={1}>
-                            {selectedAgentObj?.imageUrl && (
-                                <Avatar src={selectedAgentObj.imageUrl} alt="Agent" sx={{ width: 32, height: 32, mr: 1 }} />
-                            )}
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    px: 2,
-                                    py: 1,
-                                    backgroundColor:
-                                        theme.palette.mode === 'dark'
-                                            ? theme.palette.grey[800]
-                                            : theme.palette.grey[100],
-                                    borderRadius: '16px 16px 16px 4px',
-                                }}
-                            >
-                                <TypingDots />
-                            </Paper>
-                        </Box>
-                    )}
-                    <div ref={chatEndRef} />
-                </Box>
-
-                {/* Input field */}
-                <Box
-                    component="form"
-                    onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-                    sx={{
-                        position: 'sticky',
-                        bottom: 0,
-                        pt: 1,
-                    }}
-                >
-                    <OutlinedInput
-                        fullWidth
-                        multiline
-                        placeholder="Type your message..."
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                sendMessage();
-                            }
-                        }}
-                        endAdornment={
-                            <InputAdornment position="end">
-                                <IconButton
-                                    onClick={sendMessage}
-                                    disabled={!chatInput.trim() || loadingResponse}
-                                    edge="end"
-                                    color="primary"
-                                >
-                                    <SendIcon />
-                                </IconButton>
-                            </InputAdornment>
-                        }
-                        sx={{
-                            backgroundColor: theme.palette.background.paper,
-                            borderRadius: 3,
-                            px: 2,
-                            py: 1,
-                            '& fieldset': { borderColor: theme.palette.divider },
-                        }}
-                    />
-                </Box>
-            </Paper>
-        </Box>
+                  >
+                    {agent.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={600}
+                    sx={{ mb: 0.5 }}
+                  >
+                    {agent.name}
+                  </Typography>
+                  {agent.description && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        opacity: 0.6,
+                        fontSize: "0.8rem",
+                        lineHeight: 1.2,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {agent.description}
+                    </Typography>
+                  )}
+                </CardActionArea>
+              </Card>
+            ))}
+          </Box>
+        )}
+      </Box>
     );
+  }
+
+  return (
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "radial-gradient(circle at top, #121212, #0a0a0a)",
+      }}
+    >
+      <Paper
+        elevation={8}
+        sx={{
+          width: "100%",
+          maxWidth: 820,
+          height: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 4,
+          overflow: "hidden",
+          background: "rgba(20,20,20,0.75)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {selectedAgent.name}
+          </Typography>
+          <Button
+            onClick={() => setSelectedAgent(null)}
+            size="small"
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+          >
+            Change Agent
+          </Button>
+        </Box>
+
+        {/* Chat content */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            p: 2,
+            pb: 10,
+            background: "rgba(255,255,255,0.02)",
+          }}
+        >
+          {chatHistory.map((msg, i) => (
+            <MessageBubble key={i} msg={msg} theme={theme} />
+          ))}
+          {statusMessage && (
+            <Typography
+              variant="body2"
+              color="warning.main"
+              sx={{ textAlign: "center", mb: 1 }}
+            >
+              {statusMessage}
+            </Typography>
+          )}
+          {loadingResponse && (
+            <Box display="flex" alignItems="center" mb={1}>
+              <TypingDots />
+            </Box>
+          )}
+          <div ref={chatEndRef} />
+        </Box>
+
+        {/* Input bar */}
+        <Box
+          sx={{
+            p: 1.5,
+            background: "rgba(15,15,15,0.9)",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <OutlinedInput
+            fullWidth
+            multiline
+            maxRows={4}
+            placeholder="Type your message..."
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            endAdornment={
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={sendMessage}
+                  disabled={!chatInput.trim() || loadingResponse}
+                  sx={{
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    "&:hover": { backgroundColor: theme.palette.primary.dark },
+                  }}
+                >
+                  <SendIcon />
+                </IconButton>
+              </InputAdornment>
+            }
+            sx={{
+              borderRadius: 3,
+              backgroundColor: "rgba(255,255,255,0.08)",
+              color: "#fff",
+              "& fieldset": { border: "none" },
+            }}
+          />
+        </Box>
+      </Paper>
+    </Box>
+  );
 }

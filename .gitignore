@@ -1,23 +1,80 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# === Environnements ===
+**/.env
+**/.env.*
+!**/.env.example
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# === Dépendances ===
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# === Builds ===
+dist-cjs/
+dist/
+build/
+.cache/
+.temp/
+out/
+.next/
+
+# === Logs ===
+logs/
+*.log
+*.out
+*.err
+*.pid
+
+# === Tests / Coverage ===
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+junit.xml
+
+# === IDE / Éditeurs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === Docker ===
+docker-compose.override.yml
+.dockerignore
+
+# === Sécurité / Clés ===
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+**/*.jks
+**/*.keystore
+
+# === Environnements / Cloud ===
+.envrc
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars
+terraform.tfstate*
+secrets.*
+
+# === Temp / Divers ===
+tmp/
+temp/
+*.bak
+*.tmp
+
+**/apis/*
+**/generated/**
+
+**/deploy.yml
