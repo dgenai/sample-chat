@@ -3,31 +3,22 @@ import { EventSourceParserStream } from 'eventsource-parser/stream';
 export async function* parseSSEStream(stream) {
   const sseStream = stream
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new EventSourceParserStream())
+    .pipeThrough(new EventSourceParserStream());
 
   for await (const chunk of sseStream) {
-      try {
-        
-        const parsedResponse = parse(chunk.data);
-        yield parsedResponse;
+    try {
+      if (!chunk?.data) continue;
 
-      } catch (error) {
-        console.error("Failed to process SSE message :", error.message);
-      }
-    
-  }
-}
+      const data = JSON.parse(chunk.data);
 
-function parse(rawResponse) {
-  try {
-    const parsed = JSON.parse(rawResponse);
-
-    return {
-      type: parsed.type,
-      msg: parsed.msg,
-    };
-  } catch (error) {
-    console.error("Failed to parse message :", error.message);
-    throw new Error("Failed to parse message.");
+      // Expose both generic and custom event types
+      yield {
+        event: chunk.event || "message",
+        type: data.type || chunk.event || "message",
+        msg: data.msg || data.proof || data,
+      };
+    } catch (error) {
+      console.error("Failed to process SSE message:", error.message);
+    }
   }
 }

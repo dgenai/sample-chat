@@ -29,18 +29,14 @@ npm install
 yarn install
 ```
 
-3. **Set your API key**
+3. **Set your .env**
 
-In `AgentChatbot.jsx`, replace the placeholder:
-
-```js
-const API_KEY = "";
-```
-
-with your actual API key:
 
 ```js
-const API_KEY = "your-api-key-here";
+VITE_NETWORK=solana
+VITE_PRIVATE_KEY=PRIVATE_KEY
+VITE_BASE_URL="https://api.dgenai.io"
+VITE_SERVER_URL="http://localhost:5050/api"
 ```
 
 ---
@@ -50,12 +46,12 @@ const API_KEY = "your-api-key-here";
 Run the development server:
 
 ```bash
-npm start
+npm run start
 # or
 yarn start
 ```
 
-Then open [http://localhost:3000](http://localhost:3000) in your browser.
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
@@ -63,31 +59,6 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 All API endpoints are available and documented at:  
 👉 [https://api.dgenai.io/swagger](https://api.dgenai.io/swagger)
-
-This app uses:
-
-- `GET /api/agents` — to retrieve the list of available agents.
-- `POST /api/agents/{agentId}/ask` — to send user input and receive agent responses.
-
-All requests must include the `X-Api-Key` HTTP header.
-
-Example:
-
-```http
-GET /api/agents
-Host: api.dgenai.io
-X-Api-Key: your-api-key-here
-```
-
----
-
-## 📁 File Overview
-
-- `AgentChatbot.jsx`: Main component for the chatbot UI and logic.
-- Uses:
-  - `axios` for HTTP requests
-  - `@mui/material` for styling and UI
-  - `react-markdown` to render agent responses
 
 ---
 
@@ -106,4 +77,4 @@ Contributions are not currently accepted for this sample project.
 
 ## 📬 Contact
 
-For access or API support, visit [https://dgenai.io](https://dgenai.io) or contact your platform administrator.
+For access or API support, send a mail to contact@dgenai.io

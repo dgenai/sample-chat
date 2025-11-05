@@ -16,7 +16,6 @@ export default function AgentChatbot() {
       try {
         const res = await fetch(`${API_BASE}/agents`);
         const data = await res.json();
-        
         setAgents(data);
       } catch (err) {
         console.error("Failed to fetch agents:", err);
@@ -30,13 +29,17 @@ export default function AgentChatbot() {
   return (
     <Box
       sx={{
-        height: "100vh",
+        flex: 1,
+        width: "100%",
+        height: "100%",
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        background: theme.palette.mode === "dark"
-          ? `radial-gradient(circle at 20% 20%, #141414, ${theme.palette.background.default})`
-          : `radial-gradient(circle at 20% 20%, #f0f0f0, ${theme.palette.background.default})`,
+        background:
+          theme.palette.mode === "dark"
+            ? `radial-gradient(circle at 20% 20%, #141414, ${theme.palette.background.default})`
+            : `radial-gradient(circle at 20% 20%, #f0f0f0, ${theme.palette.background.default})`,
         transition: "background 0.4s ease",
       }}
     >
@@ -48,11 +51,22 @@ export default function AgentChatbot() {
           onSelect={(agent) => setSelectedAgent(agent)}
         />
       ) : (
-        <ChatWindow
-          agent={selectedAgent}
-          onBack={() => setSelectedAgent(null)}
-          apiBase={API_BASE}
-        />
+        <Box
+          sx={{
+            flex: 1,
+            width: "50%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "stretch", 
+          }}
+        >
+          <ChatWindow
+            agent={selectedAgent}
+            onBack={() => setSelectedAgent(null)}
+            apiBase={API_BASE}
+          />
+        </Box>
       )}
     </Box>
   );
